@@ -247,7 +247,7 @@ class ApiController extends Controller
             $i++;
         }
 
-        return response()->json(['status' => true,'message' => 'Found data', "data"=> $r_items]);
+        return response()->json(['status' => true,'message' => 'Found data', "data"=> $r_items, "categories" => $categories]);
     }
 
     private function check_user(){
