@@ -9,6 +9,7 @@ use App\Models\Category;
 use Storage;
 use Session;
 
+
 class AdviceController extends Controller
 {
     /**
@@ -100,7 +101,7 @@ class AdviceController extends Controller
         $category = Category::findOrFail($request->category_id);
         
         if($request->hasFile('cover')){
-            $advice = advice::findOrFail($id);
+            $advice = Advice::findOrFail($id);
             if (isset($advice->cover_path)){
                 Storage::delete($advice->cover_path);
             }
@@ -129,7 +130,7 @@ class AdviceController extends Controller
 
     public function destroy($id)
     {
-        $advice = advice::findOrFail($id);
+        $advice = Advice::findOrFail($id);
         if (isset($advice->cover_path)){
             Storage::delete($advice->cover_path);
         }

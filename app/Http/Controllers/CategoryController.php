@@ -97,8 +97,8 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         $category = Category::findOrFail($id);
-        if (isset($category->image)){
-            Storage::delete($category->image);
+        if (isset($category->image_path)){
+            Storage::delete($category->image_path);
         }
         $category->delete();
 
