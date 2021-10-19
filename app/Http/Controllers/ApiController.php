@@ -234,7 +234,9 @@ class ApiController extends Controller
         $j = 0;
 
         foreach($categories as $category){
+            $r_items[$i]["id"] = $category->id;
             $r_items[$i]["title"] = $category->title;
+            $r_items[$i]["image"] = $category->image;
             $j = 0;
             foreach($advices as $advice){
                 if ($category->id == $advice->category_id){
