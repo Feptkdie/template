@@ -11,7 +11,7 @@
             <a href="{{ route("advice.create") }}" class="btn btn-success rounded-pill mb-3">Create advice</a>
             
             <h4 class="card-title">
-                Categories <small class="text-muted">({{ count($advices) }})</small>
+                Advices <small class="text-muted">({{ count($advices) }})</small>
             </h4>
             <table class="table table-striped">
                 <tr>
@@ -20,6 +20,7 @@
                     <th>Cover</th>
                     <th>Views</th>
                     <th>Likes</th>
+                    <th>Reports</th>
                     <th>Created</th>
                     <th>Action</th>
                 </tr>
@@ -34,6 +35,7 @@
                         </td>
                         <td>{{ $advice->views }}</td>
                         <td>{{ $advice->likes }}</td>
+                        <td>{{ $advice->reports }}</td>
                         <td>{{ $advice->created_at }}</td>
                         <td>
                             <a class="btn btn-primary" href="{{ route("advice.edit", $advice->id) }}">Edit</a>

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AdviceController;
+use App\Http\Controllers\BannerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,5 +24,6 @@ Auth::routes(['register' => false]);
 
 Route::resource("category", CategoryController::class);
 Route::resource("advice", AdviceController::class);
+Route::resource("banner", BannerController::class);
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

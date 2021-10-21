@@ -27,7 +27,7 @@ class UserController extends Controller
         if (!$user = auth()->user()){
             return response()->json(compact('token'));
         }else{
-            return response()->json(compact('token', 'user'));
+            return response()->json(compact('token', 'user'), 201);
         }
 
     }

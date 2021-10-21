@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 
 use App\Models\User;
 use App\Models\Advice;
+use App\Models\Banner;
 use App\Models\Category;
 use Validator;
 use Storage;
@@ -16,6 +17,58 @@ use JWTAuth;
 
 class ApiController extends Controller
 {
+
+    public function get_my_advice(Request $request){
+        $is_user = $this->check_user();
+        $my_advices = Advice::where(['owner_id' => auth()->user()->id])->get();
+        return response()->json(["success" => true, "message" => "Found data", "my_advices" => $my_advices]);        
+    }
+
+    public function report_advice(Request $request){
+        $is_user = $this->check_user();
+        $validator = Validator::make($request->all(),
+        [
+            'id' => ['required'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => 'Unauthorized', 'message' => $validator->errors()], 406);
+        }
+
+        $advice = Advice::findOrFail($request->id);
+        $user = User::findOrFail(auth()->user()->id);
+
+        if ($advice->owner_id == auth()->user()->id){
+            return response()->json(['error' => 'Unauthorized', 'message' => 'You are this advices owner'], 406);
+        }else{
+            $user_reported_advices = $user->reported_advice_id;
+            if (str_contains($user_reported_advices, $request->id)){
+                $count = (int)$advice->reports;
+                if ($count > 0){
+                    $count--;
+                }
+                $advice->reports = $count;
+                $advice->save();
+                $user = User::findOrFail(auth()->user()->id);
+                $reported_advice = str_replace(",{$request->id}", "", $user->reported_advice_id);
+                $user->reported_advice_id = $reported_advice;
+                $user->save();
+                return response()->json(["success" => true, "message" => "unreport", "user_reported_advices" => $user->reported_advice_id]);
+            }else{
+                $count = (int)$advice->reports;
+                $count++;
+                $advice->reports = $count;
+                $advice->save();
+                $user = User::findOrFail(auth()->user()->id);
+                $reported_advice = "{$user->reported_advice_id},{$request->id}";
+                $user->reported_advice_id = $reported_advice;
+                $user->save();
+                return response()->json(["success" => true, "message" => "reporded", "user_reported_advices" => $user->reported_advice_id]);
+            }
+           
+        }
+        
+    }    
 
     public function like_advice(Request $request){
         $is_user = $this->check_user();
@@ -36,7 +89,17 @@ class ApiController extends Controller
         }else{
             $user_liked_advices = $user->liked_advice_id;
             if (str_contains($user_liked_advices, $request->id)){
-                return response()->json(["success" => false, "message" => "You already liked this advice"]);
+                $count = (int)$advice->likes;
+                if ($count > 0){
+                    $count--;
+                }
+                $advice->likes = $count;
+                $advice->save();
+                $user = User::findOrFail(auth()->user()->id);
+                $liked_advice = str_replace(",{$request->id}", "", $user->liked_advice_id);
+                $user->liked_advice_id = $liked_advice;
+                $user->save();
+                return response()->json(["success" => true, "message" => "unliked", "user_liked_advices" => $user->liked_advice_id]);
             }else{
                 $count = (int)$advice->likes;
                 $count++;
@@ -46,7 +109,7 @@ class ApiController extends Controller
                 $liked_advice = "{$user->liked_advice_id},{$request->id}";
                 $user->liked_advice_id = $liked_advice;
                 $user->save();
-                return response()->json(["success" => true, "message" => "Liked"]);
+                return response()->json(["success" => true, "message" => "liked", "user_liked_advices" => $user->liked_advice_id]);
             }
            
         }
@@ -118,7 +181,31 @@ class ApiController extends Controller
         }else{
             return response()->json(['error' => 'Unauthorized', 'message' => 'Your token not match the advice owner'], 401);
         }
-        return response()->json(['status' => true, 'message' => "Uploaded"]);
+
+        $advices = Advice::all();
+        $categories = Category::all();
+
+        // Creating temp array
+        $r_items = array();
+
+        $i = 0;
+        $j = 0;
+
+        foreach($categories as $category){
+            $r_items[$i]["id"] = $category->id;
+            $r_items[$i]["title"] = $category->title;
+            $r_items[$i]["image"] = $category->image;
+            $j = 0;
+            foreach($advices as $advice){
+                if ($category->id == $advice->category_id){
+                    $r_items[$i]["advice"][$j] = $advice;
+                    $j++;
+                }
+            }
+            $i++;
+        }
+
+        return response()->json(['status' => true, 'message' => "Uploaded", 'advices' => $r_items]);
     }
 
     public function delete_advice(Request $request){
@@ -139,7 +226,30 @@ class ApiController extends Controller
             }
             $advice->delete();
     
-            return response()->json(["success" => true, "message" => "Deleted"]);
+            $advices = Advice::all();
+            $categories = Category::all();
+
+            // Creating temp array
+            $r_items = array();
+
+            $i = 0;
+            $j = 0;
+
+            foreach($categories as $category){
+                $r_items[$i]["id"] = $category->id;
+                $r_items[$i]["title"] = $category->title;
+                $r_items[$i]["image"] = $category->image;
+                $j = 0;
+                foreach($advices as $advice){
+                    if ($category->id == $advice->category_id){
+                        $r_items[$i]["advice"][$j] = $advice;
+                        $j++;
+                    }
+                }
+                $i++;
+            }
+
+            return response()->json(['status' => true, 'message' => "Deleted", 'advices' => $r_items]);
         }else{
             return response()->json(['error' => 'Unauthorized', 'message' => 'Your token not match the advice owner'], 406);
         }
@@ -176,6 +286,7 @@ class ApiController extends Controller
         $advice->title = $request->title;
         $advice->views = "0";
         $advice->likes = "0";
+        $advice->reports = "0";
         $advice->category_id = $request->category_id;
         $advice->category_text = $request->category_text;
         $advice->category_image = $request->category_image;
@@ -184,8 +295,31 @@ class ApiController extends Controller
         $advice->owner_avatar = auth()->user()->avatar;
         $advice->content = $request->content;
         $advice->save();
+
+        $advices = Advice::all();
+        $categories = Category::all();
+
+        // Creating temp array
+        $r_items = array();
+
+        $i = 0;
+        $j = 0;
+
+        foreach($categories as $category){
+            $r_items[$i]["id"] = $category->id;
+            $r_items[$i]["title"] = $category->title;
+            $r_items[$i]["image"] = $category->image;
+            $j = 0;
+            foreach($advices as $advice){
+                if ($category->id == $advice->category_id){
+                    $r_items[$i]["advice"][$j] = $advice;
+                    $j++;
+                }
+            }
+            $i++;
+        }
         
-        return response()->json(['status' => true, 'message' => "Uploaded"]);
+        return response()->json(['status' => true, 'message' => "Uploaded", 'advices' => $r_items]);
     }
 
     public function update_user_avatar(Request $request){
@@ -226,6 +360,7 @@ class ApiController extends Controller
         // Get all data
         $advices = Advice::all();
         $categories = Category::all();
+        $banners = Banner::all();
 
         // Creating temp array
         $r_items = array();
@@ -247,7 +382,8 @@ class ApiController extends Controller
             $i++;
         }
 
-        return response()->json(['status' => true,'message' => 'Found data', "data"=> $r_items, "categories" => $categories]);
+        return response()->json(['status' => true,'message' => 'Found data', "data"=> $r_items, "categories" => $categories,
+        "banners" => $banners]);
     }
 
     private function check_user(){

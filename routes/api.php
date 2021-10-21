@@ -37,4 +37,6 @@ Route::group(['middleware' => ['jwt.verify']], function() {
     Route::post('/update-advice', [ApiController::class, 'update_advice']);
     Route::post('/view-advice', [ApiController::class, 'view_advice']);
     Route::post('/like-advice', [ApiController::class, 'like_advice']);
+    Route::post('/report-advice', [ApiController::class, 'report_advice']);
+    Route::get('/my-advices', [ApiController::class, 'get_my_advice']);
 });
